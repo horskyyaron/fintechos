@@ -7,8 +7,13 @@
     "fintech": "./bin/fintech.js"
   },
   "scripts": {
+    "build": "tsc",
     "start": "node ./bin/fintech.js",
-    "test": "node --test"
+    "test": "npm run build && node --test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
   },
   "engines": {
     "node": ">=20"
