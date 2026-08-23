@@ -1,10 +1,13 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { checkbox } from "@inquirer/prompts";
 
+import { installSkillForAgent } from "../agents/skills.js";
 import { loadConfig } from "../config.js";
 import { CONTENT_SKILLS_DIR } from "../paths.js";
-import { hasHelpFlag, skillsHelp, skillsListHelp, skillsPublishHelp } from "../help.js";
+import { hasHelpFlag, skillsHelp, skillsInstallHelp, skillsInstalledHelp, skillsListHelp, skillsPublishHelp } from "../help.js";
 import { extractTitle, renderSkillMarkdown, splitFrontmatter } from "../skills/frontmatter.js";
+import { loadInstalledSkills, saveInstalledSkills, upsertInstalledSkill } from "../skills/installed.js";
 import { loadSkillRegistry, relativeToRepo, saveSkillRegistry, upsertSkill } from "../skills/registry.js";
 import { slugify } from "../skills/slug.js";
 import type { SkillMetadata, SkillRegistryEntry } from "../skills/types.js";
@@ -24,11 +27,135 @@ export function skills(args: string[]): void {
     case "publish":
       publishSkill(subArgs);
       break;
+    case "install":
+      void installSkills(subArgs);
+      break;
+    case "installed":
+      installedSkills(subArgs);
+      break;
     default:
       console.error(`Unknown skills command: ${subcommand}`);
       console.error("Run: fintech skills --help");
       process.exitCode = 1;
   }
+}
+
+async function installSkills(args: string[]): Promise<void> {
+  if (hasHelpFlag(args)) {
+    skillsInstallHelp();
+    return;
+  }
+
+  const config = loadConfig();
+
+  if (!config) {
+    console.error("Local setup is required before installing skills.");
+    console.error("Run: fintech setup");
+    process.exit(1);
+  }
+
+  const registry = loadSkillRegistry();
+  const requestedIds = args.filter((arg) => !arg.startsWith("--"));
+  const selectedIds = requestedIds.length > 0 ? requestedIds : await selectSkills(registry.skills);
+
+  if (selectedIds.length === 0) {
+    console.log("No skills selected.");
+    return;
+  }
+
+  const selectedSkills = selectedIds.map((id) => registry.skills.find((skill) => skill.id === id));
+  const missingIds = selectedIds.filter((_, index) => !selectedSkills[index]);
+
+  if (missingIds.length > 0) {
+    console.error(`Unknown skills: ${missingIds.join(", ")}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const supportedAgents = config.agents.filter((agent) => agent === "opencode" || agent === "claude");
+
+  if (supportedAgents.length === 0) {
+    console.error("No supported agents configured for skill install. Supported agents: opencode, claude");
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log("Installing selected skills for:");
+  supportedAgents.forEach((agent) => console.log(`- ${agent}`));
+
+  let installed = loadInstalledSkills();
+  const installedAt = new Date().toISOString();
+
+  for (const skill of selectedSkills) {
+    if (!skill) {
+      continue;
+    }
+
+    const installedAgents: string[] = [];
+
+    for (const agent of supportedAgents) {
+      const result = installSkillForAgent(agent, skill);
+
+      if (!result) {
+        continue;
+      }
+
+      installedAgents.push(agent);
+      console.log(`ok ${skill.title} -> ${result.path}`);
+    }
+
+    installed = upsertInstalledSkill(installed, {
+      id: skill.id,
+      title: skill.title,
+      agents: installedAgents,
+      installed_at: installedAt
+    });
+  }
+
+  saveInstalledSkills(installed);
+}
+
+async function selectSkills(skills: SkillRegistryEntry[]): Promise<string[]> {
+  if (!process.stdin.isTTY) {
+    console.error("Interactive install requires a terminal.");
+    console.error("Use: fintech skills install <skill-id>");
+    process.exit(1);
+  }
+
+  return checkbox({
+    message: "Select skills to install",
+    choices: skills.map((skill) => ({
+      name: `${skill.title} - ${skill.description || "No description"}`,
+      value: skill.id
+    }))
+  });
+}
+
+function installedSkills(args: string[]): void {
+  if (hasHelpFlag(args)) {
+    skillsInstalledHelp();
+    return;
+  }
+
+  const installed = loadInstalledSkills();
+
+  if (installed.skills.length === 0) {
+    console.log("No skills installed yet.");
+    console.log("Install one with: fintech skills install <skill-id>");
+    return;
+  }
+
+  const rows = installed.skills.map((skill) => [
+    skill.title,
+    skill.agents.join(","),
+    skill.installed_at
+  ]);
+  const headers = ["Skill", "Agents", "Installed At"];
+  const widths = headers.map((header, index) => Math.max(header.length, ...rows.map((row) => row[index].length)));
+
+  console.log(formatRow(headers, widths));
+  console.log(formatRow(widths.map((width) => "-".repeat(width)), widths));
+  rows.forEach((row) => console.log(formatRow(row, widths)));
 }
 
 function listSkills(args: string[]): void {
