@@ -10,6 +10,7 @@ export type SkillMetadata = {
 export type SkillRegistryEntry = SkillMetadata & {
   id: string;
   path: string;
+  description: string;
 };
 
 export type SkillRegistry = {

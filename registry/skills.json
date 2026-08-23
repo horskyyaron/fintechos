@@ -4,8 +4,9 @@
       "id": "efi5",
       "title": "/efi5",
       "path": "content/skills/efi5.md",
-      "author": "Fintech Brain",
-      "author_email": "team@example.com",
+      "description": "Explain a topic for total beginners using an HTML artifact with big pictures and few words.",
+      "author": "Yaron Horsky",
+      "author_email": "yaronh@moveo.co.il",
       "tags": [],
       "created": "2026-08-24T00:00:00.000Z",
       "updated": "2026-08-24T00:00:00.000Z"
