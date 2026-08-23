@@ -45,10 +45,32 @@ function listSkills(args: string[]): void {
     return;
   }
 
-  for (const skill of registry.skills) {
-    const tags = skill.tags.length > 0 ? skill.tags.join(",") : "-";
-    console.log(`${skill.id}\t${skill.title}\t${skill.author}\t${tags}`);
+  printSkillTable(registry.skills);
+}
+
+function printSkillTable(skills: SkillRegistryEntry[]): void {
+  const rows = skills.map((skill) => [
+    skill.title,
+    skill.description || "-",
+    skill.author,
+    skill.author_email
+  ]);
+  const headers = ["Skill", "Description", "Author", "Email"];
+  const widths = headers.map((header, index) => Math.max(
+    header.length,
+    ...rows.map((row) => row[index].length)
+  ));
+
+  console.log(formatRow(headers, widths));
+  console.log(formatRow(widths.map((width) => "-".repeat(width)), widths));
+
+  for (const row of rows) {
+    console.log(formatRow(row, widths));
   }
+}
+
+function formatRow(values: string[], widths: number[]): string {
+  return values.map((value, index) => value.padEnd(widths[index])).join("  ");
 }
 
 function publishSkill(args: string[]): void {
@@ -117,6 +139,7 @@ function publishSkill(args: string[]): void {
   const entry: SkillRegistryEntry = {
     id,
     path: relativeToRepo(targetPath),
+    description: "",
     ...metadata
   };
   const registry = upsertSkill(loadSkillRegistry(), entry);
