@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FINTECH_BIN="$ROOT_DIR/bin/fintech.js"
+LOCAL_BIN_DIR="$HOME/.local/bin"
+LOCAL_FINTECH_BIN="$LOCAL_BIN_DIR/fintech"
 COMPLETION_DIR="$HOME/.config/fintech-brain/completions"
 MARKER_START="# >>> fintech-brain initialize >>>"
 MARKER_END="# <<< fintech-brain initialize <<<"
@@ -147,19 +149,23 @@ check_dependencies() {
 append_once() {
   local file="$1"
   local content="$2"
+  local replacement
 
   touch "$file"
+  replacement="$(printf '\n%s\n%s\n%s\n' "$MARKER_START" "$content" "$MARKER_END")"
 
   if grep -Fq "$MARKER_START" "$file"; then
-    info "Shell config already contains fintech block: $file"
+    awk -v start="$MARKER_START" -v end="$MARKER_END" -v replacement="$replacement" '
+      $0 == start { print replacement; skipping = 1; next }
+      $0 == end { skipping = 0; next }
+      !skipping { print }
+    ' "$file" > "$file.tmp"
+    mv "$file.tmp" "$file"
+    success "Updated shell config: $file"
     return
   fi
 
-  {
-    printf '\n%s\n' "$MARKER_START"
-    printf '%s\n' "$content"
-    printf '%s\n' "$MARKER_END"
-  } >> "$file"
+  printf '%s' "$replacement" >> "$file"
 
   success "Updated shell config: $file"
 }
@@ -168,12 +174,33 @@ install_completion() {
   mkdir -p "$COMPLETION_DIR"
 
   "$FINTECH_BIN" completion zsh > "$COMPLETION_DIR/_fintech"
-  append_once "$HOME/.zshrc" "fpath=(\"$COMPLETION_DIR\" \$fpath)\nautoload -Uz compinit\ncompinit"
+  append_once "$HOME/.zshrc" "export PATH=\"$LOCAL_BIN_DIR:\$PATH\"\nfpath=(\"$COMPLETION_DIR\" \$fpath)\nautoload -Uz compinit\ncompinit"
   success 'Installed zsh completion. Restart shell or run: source ~/.zshrc'
 
   "$FINTECH_BIN" completion bash > "$COMPLETION_DIR/fintech.bash"
-  append_once "$HOME/.bashrc" "[ -f \"$COMPLETION_DIR/fintech.bash\" ] && source \"$COMPLETION_DIR/fintech.bash\""
+  append_once "$HOME/.bashrc" "export PATH=\"$LOCAL_BIN_DIR:\$PATH\"\n[ -f \"$COMPLETION_DIR/fintech.bash\" ] && source \"$COMPLETION_DIR/fintech.bash\""
   success 'Installed bash completion. Restart shell or run: source ~/.bashrc'
+}
+
+install_fintech_command() {
+  mkdir -p "$LOCAL_BIN_DIR"
+
+  cat > "$LOCAL_FINTECH_BIN" <<EOF
+#!/usr/bin/env bash
+exec "$FINTECH_BIN" "\$@"
+EOF
+
+  chmod +x "$LOCAL_FINTECH_BIN"
+  success "Installed fintech command: $LOCAL_FINTECH_BIN"
+
+  case ":$PATH:" in
+    *":$LOCAL_BIN_DIR:"*)
+      return
+      ;;
+    *)
+      info "$LOCAL_BIN_DIR is not on PATH in this shell. Restart your shell after setup."
+      ;;
+  esac
 }
 
 check_dependencies
@@ -184,8 +211,8 @@ npm install
 section 'Building CLI'
 npm run build
 
-section 'Linking fintech command'
-npm link
+section 'Installing fintech command'
+install_fintech_command
 
 section 'Running fintech setup'
 SETUP_ARGS=()
