@@ -94,30 +94,36 @@ _fintech() {
   skills_publish_options=(${skillsPublishOptions})
   shells=(${shells})
 
-  if (( CURRENT == 2 )); then
-    _describe 'command' commands
-    return
-  fi
+  _arguments -C \
+    '1:command:->command' \
+    '*::arg:->arg'
 
-  case "$words[2]" in
-    setup)
-      _describe 'option' setup_options
+  case "$state" in
+    command)
+      compadd -a commands
       ;;
-    doctor|version|help)
-      _describe 'option' help_options
-      ;;
-    skills)
-      if (( CURRENT == 3 )); then
-        _describe 'skills command' skills_commands
-      elif [[ "$words[3]" == "publish" ]]; then
-        _describe 'option' skills_publish_options
-      else
-        _describe 'option' help_options
-      fi
-      ;;
-    completion)
-      _describe 'shell' shells
-      _describe 'option' help_options
+    arg)
+      case "$words[2]" in
+        setup)
+          compadd -a setup_options
+          ;;
+        doctor|version|help)
+          compadd -a help_options
+          ;;
+        skills)
+          if (( CURRENT == 3 )); then
+            compadd -a skills_commands
+          elif [[ "$words[3]" == "publish" ]]; then
+            compadd -a skills_publish_options
+          else
+            compadd -a help_options
+          fi
+          ;;
+        completion)
+          compadd -a shells
+          compadd -a help_options
+          ;;
+      esac
       ;;
   esac
 }

@@ -257,6 +257,9 @@ install_completion() {
   "$FINTECH_BIN" completion bash > "$COMPLETION_DIR/fintech.bash"
   append_once "$HOME/.bashrc" "export PATH=\"$LOCAL_BIN_DIR:\$PATH\"\n[ -f \"$COMPLETION_DIR/fintech.bash\" ] && source \"$COMPLETION_DIR/fintech.bash\""
   success 'Installed bash completion. Restart shell or run: source ~/.bashrc'
+
+  rm -f "$HOME"/.zcompdump "$HOME"/.zcompdump-*
+  info 'Cleared zsh completion cache. Restart shell or run: source ~/.zshrc'
 }
 
 install_fintech_command() {
