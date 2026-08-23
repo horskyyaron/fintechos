@@ -3,12 +3,13 @@ import { doctor } from "./commands/doctor.js";
 import { completion } from "./commands/completion.js";
 import { ALLOWED_BEFORE_SETUP, VERSION } from "./constants.js";
 import { loadConfig, validateConfig } from "./config.js";
+import { globalHelp, hasHelpFlag, versionHelp } from "./help.js";
 
 async function main(): Promise<void> {
   const [, , rawCommand, ...args] = process.argv;
   const command = rawCommand ?? "help";
 
-  if (!ALLOWED_BEFORE_SETUP.has(command)) {
+  if (!ALLOWED_BEFORE_SETUP.has(command) && !hasHelpFlag(args)) {
     requireSetup();
   }
 
@@ -17,20 +18,24 @@ async function main(): Promise<void> {
       await setup(args);
       break;
     case "doctor":
-      doctor();
+      doctor(args);
       break;
     case "completion":
-      completion(args[0]);
+      completion(args);
       break;
     case "version":
     case "--version":
     case "-v":
+      if (hasHelpFlag(args)) {
+        versionHelp();
+        break;
+      }
       console.log(VERSION);
       break;
     case "help":
     case "--help":
     case "-h":
-      help();
+      globalHelp();
       break;
     default:
       console.error(`Unknown command: ${command}`);
@@ -50,20 +55,6 @@ function requireSetup(): void {
     console.error("  fintech setup");
     process.exit(1);
   }
-}
-
-function help(): void {
-  console.log(`fintech ${VERSION}
-
-Usage:
-  fintech setup [--reset] [--name <name>] [--email <email>] [--agents <agents>]
-  fintech doctor
-  fintech completion <bash|zsh>
-  fintech version
-  fintech help
-
-Most commands require setup first:
-  fintech setup`);
 }
 
 main().catch((error: unknown) => {

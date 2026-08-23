@@ -1,0 +1,84 @@
+import { VERSION } from "./constants.js";
+
+export function globalHelp(): void {
+  console.log(`fintech ${VERSION}
+
+Usage:
+  fintech <command> [options]
+
+Commands:
+  setup       Configure local identity and agents
+  doctor      Check local fintech setup
+  completion  Generate shell completion
+  version     Print version
+  help        Print help
+
+Run command help:
+  fintech <command> --help
+
+Most commands require setup first:
+  fintech setup`);
+}
+
+export function setupHelp(): void {
+  console.log(`Usage:
+  fintech setup [options]
+
+Configure local identity and coding agent preferences.
+
+Defaults:
+  Name and email are read from git config when available.
+
+Options:
+  --reset           Replace an existing setup
+  --name <name>     Set display name without prompting
+  --email <email>   Set email without prompting
+  --agents <agents> Set comma-separated agents without prompting
+  -h, --help        Print this help
+
+Examples:
+  fintech setup
+  fintech setup --reset
+  fintech setup --name "Yaron Horsky" --email "yaron@example.com" --agents opencode,claude`);
+}
+
+export function doctorHelp(): void {
+  console.log(`Usage:
+  fintech doctor [options]
+
+Check whether local fintech setup exists and is valid.
+
+Options:
+  -h, --help  Print this help
+
+Examples:
+  fintech doctor`);
+}
+
+export function completionHelp(): void {
+  console.log(`Usage:
+  fintech completion <bash|zsh> [options]
+
+Generate shell completion script.
+
+Options:
+  -h, --help  Print this help
+
+Examples:
+  fintech completion zsh
+  fintech completion bash`);
+}
+
+export function versionHelp(): void {
+  console.log(`Usage:
+  fintech version [options]
+
+Print the fintech CLI version.
+
+Options:
+  -h, --help  Print this help`);
+}
+
+export function hasHelpFlag(args: string[]): boolean {
+  return args.includes("--help") || args.includes("-h");
+}

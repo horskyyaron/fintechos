@@ -1,6 +1,12 @@
 import { loadConfig, validateConfig } from "../config.js";
+import { doctorHelp, hasHelpFlag } from "../help.js";
 
-export function doctor(): void {
+export function doctor(args: string[]): void {
+  if (hasHelpFlag(args)) {
+    doctorHelp();
+    return;
+  }
+
   const config = loadConfig();
 
   if (!config) {

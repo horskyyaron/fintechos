@@ -6,6 +6,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { CONFIG_PATH, SUPPORTED_AGENTS, type SupportedAgent } from "../constants.js";
 import { isValidEmail, loadConfig, type FintechConfig } from "../config.js";
 import { getGitConfig } from "../git.js";
+import { hasHelpFlag, setupHelp } from "../help.js";
 
 type SetupOptions = {
   name?: string;
@@ -14,6 +15,11 @@ type SetupOptions = {
 };
 
 export async function setup(args: string[]): Promise<void> {
+  if (hasHelpFlag(args)) {
+    setupHelp();
+    return;
+  }
+
   const reset = args.includes("--reset");
   const options = parseOptions(args);
   const existing = loadConfig();
