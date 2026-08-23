@@ -31,3 +31,19 @@ fintech doctor
 ```
 
 This installs dependencies, builds the CLI, links the `fintech` command, runs setup, and installs shell completion for bash or zsh.
+
+## Remote Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/horskyyaron/fintechos/master/install.sh | bash
+```
+
+The installer clones the repo into `~/.local/share/fintech-brain` and runs `setup.sh`.
+
+Optional overrides:
+
+```bash
+FINTECH_INSTALL_DIR="$HOME/Projects/fintech-brain" \
+FINTECH_AGENTS="opencode,claude" \
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/horskyyaron/fintechos/master/install.sh)"
+```
