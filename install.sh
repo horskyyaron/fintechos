@@ -25,6 +25,10 @@ require_command() {
   fi
 }
 
+has_command() {
+  command -v "$1" >/dev/null 2>&1
+}
+
 color() {
   local code="$1"
   shift
@@ -52,6 +56,73 @@ error() {
   printf '%s %s\n' "$(color 31 'error:')" "$*" >&2
 }
 
+prompt_continue() {
+  if [ ! -t 0 ] || [ "${FINTECH_YES:-}" = "1" ]; then
+    return
+  fi
+
+  printf '%s %s [Y/n] ' "$(color 33 '?')" "$*"
+  read -r answer
+
+  case "$answer" in
+    ""|y|Y|yes|YES)
+      return
+      ;;
+    *)
+      error 'Installation cancelled.'
+      exit 1
+      ;;
+  esac
+}
+
+install_homebrew() {
+  if has_command brew; then
+    success 'Homebrew is available'
+    return
+  fi
+
+  if ! has_command curl; then
+    error 'curl is required to install Homebrew.'
+    error 'Install curl manually, then rerun the installer.'
+    exit 1
+  fi
+
+  section 'Installing Homebrew'
+  info 'Homebrew is required to install missing system dependencies.'
+  prompt_continue 'Install Homebrew now?'
+
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+
+  if ! has_command brew; then
+    error 'Homebrew installation finished, but brew is not available on PATH.'
+    error 'Restart your shell and rerun the installer.'
+    exit 1
+  fi
+
+  success 'Homebrew installed'
+}
+
+install_with_homebrew() {
+  install_homebrew
+
+  for dependency in "$@"; do
+    if has_command "$dependency"; then
+      success "$dependency is available"
+      continue
+    fi
+
+    section "Installing $dependency"
+    prompt_continue "Install $dependency with Homebrew?"
+    brew install "$dependency"
+  done
+}
+
 print_config() {
   section 'Fintech Brain installer'
   info "Repo: $REPO_URL"
@@ -68,8 +139,18 @@ print_config() {
 
 check_requirements() {
   section 'Checking requirements'
+
+  if has_command git && has_command curl; then
+    success 'git and curl are available'
+    return
+  fi
+
+  info 'git and/or curl are missing.'
+  install_with_homebrew git curl
+
   require_command git
-  success 'git is available'
+  require_command curl
+  success 'git and curl are available'
 }
 
 # -----------------------------------------------------------------------------

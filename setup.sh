@@ -28,6 +28,12 @@ has_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
+curl_version() {
+  local version
+  version="$(curl --version)"
+  printf '%s' "${version%%$'\n'*}"
+}
+
 color() {
   local code="$1"
   shift
@@ -74,6 +80,73 @@ prompt_continue() {
   esac
 }
 
+prompt_install() {
+  if [ ! -t 0 ] || [ "${FINTECH_YES:-}" = "1" ]; then
+    return
+  fi
+
+  printf '%s %s [Y/n] ' "$(color 33 '?')" "$*"
+  read -r answer
+
+  case "$answer" in
+    ""|y|Y|yes|YES)
+      return
+      ;;
+    *)
+      error 'Setup cancelled.'
+      exit 1
+      ;;
+  esac
+}
+
+install_homebrew() {
+  if has_command brew; then
+    success 'Homebrew is available'
+    return
+  fi
+
+  if ! has_command curl; then
+    error 'curl is required to install Homebrew.'
+    error 'Install curl manually, then rerun ./setup.sh.'
+    exit 1
+  fi
+
+  section 'Installing Homebrew'
+  info 'Homebrew is required to install missing system dependencies.'
+  prompt_install 'Install Homebrew now?'
+
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+
+  if ! has_command brew; then
+    error 'Homebrew installation finished, but brew is not available on PATH.'
+    error 'Restart your shell and rerun ./setup.sh.'
+    exit 1
+  fi
+
+  success 'Homebrew installed'
+}
+
+install_with_homebrew() {
+  install_homebrew
+
+  for dependency in "$@"; do
+    if has_command "$dependency"; then
+      success "$dependency is available"
+      continue
+    fi
+
+    section "Installing $dependency"
+    prompt_install "Install $dependency with Homebrew?"
+    brew install "$dependency"
+  done
+}
+
 install_mise() {
   if has_command mise; then
     success 'mise is available'
@@ -118,14 +191,17 @@ install_tool_dependencies() {
 check_dependencies() {
   section 'Checking dependencies'
 
-  if ! has_command git; then
-    error 'git is required before setup can continue.'
-    error 'Install git first, then rerun ./setup.sh.'
-    exit 1
+  if ! has_command git || ! has_command curl; then
+    info 'git and/or curl are missing.'
+    install_with_homebrew git curl
   fi
+
+  require_command git
+  require_command curl
 
   if has_command node && has_command npm; then
     success "git: $(git --version)"
+    success "curl: $(curl_version)"
     success "node: $(node --version)"
     success "npm: $(npm --version)"
     prompt_continue
@@ -141,6 +217,7 @@ check_dependencies() {
   fi
 
   success "git: $(git --version)"
+  success "curl: $(curl_version)"
   success "node: $(node --version)"
   success "npm: $(npm --version)"
   prompt_continue
