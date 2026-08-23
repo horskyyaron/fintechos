@@ -1,5 +1,6 @@
 import { setup } from "./commands/setup.js";
 import { doctor } from "./commands/doctor.js";
+import { completion } from "./commands/completion.js";
 import { ALLOWED_BEFORE_SETUP, VERSION } from "./constants.js";
 import { loadConfig, validateConfig } from "./config.js";
 
@@ -17,6 +18,9 @@ async function main(): Promise<void> {
       break;
     case "doctor":
       doctor();
+      break;
+    case "completion":
+      completion(args[0]);
       break;
     case "version":
     case "--version":
@@ -54,6 +58,7 @@ function help(): void {
 Usage:
   fintech setup [--reset] [--name <name>] [--email <email>] [--agents <agents>]
   fintech doctor
+  fintech completion <bash|zsh>
   fintech version
   fintech help
 

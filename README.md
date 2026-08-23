@@ -23,3 +23,11 @@ npm link
 fintech setup
 fintech doctor
 ```
+
+## Bootstrap
+
+```bash
+./setup.sh
+```
+
+This installs dependencies, builds the CLI, links the `fintech` command, runs setup, and installs shell completion for bash or zsh.
