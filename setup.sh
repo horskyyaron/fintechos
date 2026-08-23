@@ -6,14 +6,46 @@ FINTECH_BIN="$ROOT_DIR/bin/fintech.js"
 COMPLETION_DIR="$HOME/.config/fintech-brain/completions"
 MARKER_START="# >>> fintech-brain initialize >>>"
 MARKER_END="# <<< fintech-brain initialize <<<"
+USE_COLOR=0
+
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  USE_COLOR=1
+fi
 
 cd "$ROOT_DIR"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    printf 'Missing required command: %s\n' "$1" >&2
+    error "Missing required command: $1"
     exit 1
   fi
+}
+
+color() {
+  local code="$1"
+  shift
+
+  if [ "$USE_COLOR" = "1" ]; then
+    printf '\033[%sm%s\033[0m' "$code" "$*"
+  else
+    printf '%s' "$*"
+  fi
+}
+
+section() {
+  printf '\n%s %s\n' "$(color 36 '==>')" "$(color 1 "$*")"
+}
+
+info() {
+  printf '%s %s\n' "$(color 34 '-->')" "$*"
+}
+
+success() {
+  printf '%s %s\n' "$(color 32 'ok')" "$*"
+}
+
+error() {
+  printf '%s %s\n' "$(color 31 'error:')" "$*" >&2
 }
 
 append_once() {
@@ -23,7 +55,7 @@ append_once() {
   touch "$file"
 
   if grep -Fq "$MARKER_START" "$file"; then
-    printf 'Shell config already contains fintech block: %s\n' "$file"
+    info "Shell config already contains fintech block: $file"
     return
   fi
 
@@ -32,6 +64,8 @@ append_once() {
     printf '%s\n' "$content"
     printf '%s\n' "$MARKER_END"
   } >> "$file"
+
+  success "Updated shell config: $file"
 }
 
 install_completion() {
@@ -39,27 +73,27 @@ install_completion() {
 
   "$FINTECH_BIN" completion zsh > "$COMPLETION_DIR/_fintech"
   append_once "$HOME/.zshrc" "fpath=(\"$COMPLETION_DIR\" \$fpath)\nautoload -Uz compinit\ncompinit"
-  printf 'Installed zsh completion. Restart shell or run: source ~/.zshrc\n'
+  success 'Installed zsh completion. Restart shell or run: source ~/.zshrc'
 
   "$FINTECH_BIN" completion bash > "$COMPLETION_DIR/fintech.bash"
   append_once "$HOME/.bashrc" "[ -f \"$COMPLETION_DIR/fintech.bash\" ] && source \"$COMPLETION_DIR/fintech.bash\""
-  printf 'Installed bash completion. Restart shell or run: source ~/.bashrc\n'
+  success 'Installed bash completion. Restart shell or run: source ~/.bashrc'
 }
 
 require_command node
 require_command npm
 require_command git
 
-printf 'Installing dependencies...\n'
+section 'Installing dependencies'
 npm install
 
-printf 'Building CLI...\n'
+section 'Building CLI'
 npm run build
 
-printf 'Linking fintech command...\n'
+section 'Linking fintech command'
 npm link
 
-printf 'Running fintech setup...\n'
+section 'Running fintech setup'
 SETUP_ARGS=()
 
 if [ "${FINTECH_SETUP_RESET:-}" = "1" ]; then
@@ -80,7 +114,8 @@ fi
 
 "$FINTECH_BIN" setup "${SETUP_ARGS[@]}"
 
-printf 'Installing shell completion...\n'
+section 'Installing shell completion'
 install_completion
 
-printf 'Setup finished. Verify with: fintech doctor\n'
+section 'Setup finished'
+success 'Verify with: fintech doctor'
