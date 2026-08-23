@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FINTECH_BIN="$ROOT_DIR/bin/fintech.js"
 COMPLETION_DIR="$HOME/.config/fintech-brain/completions"
 MARKER_START="# >>> fintech-brain initialize >>>"
 MARKER_END="# <<< fintech-brain initialize <<<"
@@ -36,11 +37,11 @@ append_once() {
 install_completion() {
   mkdir -p "$COMPLETION_DIR"
 
-  fintech completion zsh > "$COMPLETION_DIR/_fintech"
+  "$FINTECH_BIN" completion zsh > "$COMPLETION_DIR/_fintech"
   append_once "$HOME/.zshrc" "fpath=(\"$COMPLETION_DIR\" \$fpath)\nautoload -Uz compinit\ncompinit"
   printf 'Installed zsh completion. Restart shell or run: source ~/.zshrc\n'
 
-  fintech completion bash > "$COMPLETION_DIR/fintech.bash"
+  "$FINTECH_BIN" completion bash > "$COMPLETION_DIR/fintech.bash"
   append_once "$HOME/.bashrc" "[ -f \"$COMPLETION_DIR/fintech.bash\" ] && source \"$COMPLETION_DIR/fintech.bash\""
   printf 'Installed bash completion. Restart shell or run: source ~/.bashrc\n'
 }
@@ -59,7 +60,25 @@ printf 'Linking fintech command...\n'
 npm link
 
 printf 'Running fintech setup...\n'
-fintech setup
+SETUP_ARGS=()
+
+if [ "${FINTECH_SETUP_RESET:-}" = "1" ]; then
+  SETUP_ARGS+=("--reset")
+fi
+
+if [ -n "${FINTECH_NAME:-}" ]; then
+  SETUP_ARGS+=("--name" "$FINTECH_NAME")
+fi
+
+if [ -n "${FINTECH_EMAIL:-}" ]; then
+  SETUP_ARGS+=("--email" "$FINTECH_EMAIL")
+fi
+
+if [ -n "${FINTECH_AGENTS:-}" ]; then
+  SETUP_ARGS+=("--agents" "$FINTECH_AGENTS")
+fi
+
+"$FINTECH_BIN" setup "${SETUP_ARGS[@]}"
 
 printf 'Installing shell completion...\n'
 install_completion
