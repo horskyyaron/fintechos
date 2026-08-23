@@ -1,6 +1,7 @@
 import { setup } from "./commands/setup.js";
 import { doctor } from "./commands/doctor.js";
 import { completion } from "./commands/completion.js";
+import { skills } from "./commands/skills.js";
 import { ALLOWED_BEFORE_SETUP, VERSION } from "./constants.js";
 import { loadConfig, validateConfig } from "./config.js";
 import { globalHelp, hasHelpFlag, versionHelp } from "./help.js";
@@ -22,6 +23,9 @@ async function main(): Promise<void> {
       break;
     case "completion":
       completion(args);
+      break;
+    case "skills":
+      skills(args);
       break;
     case "version":
     case "--version":
