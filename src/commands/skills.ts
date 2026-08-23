@@ -49,28 +49,91 @@ function listSkills(args: string[]): void {
 }
 
 function printSkillTable(skills: SkillRegistryEntry[]): void {
-  const rows = skills.map((skill) => [
-    skill.title,
-    skill.description || "-",
-    skill.author,
-    skill.author_email
-  ]);
   const headers = ["Skill", "Description", "Author", "Email"];
-  const widths = headers.map((header, index) => Math.max(
-    header.length,
-    ...rows.map((row) => row[index].length)
-  ));
+  const terminalWidth = process.stdout.columns || Number(process.env.COLUMNS) || 100;
+  const descriptionWidth = Math.max("Description".length, Math.floor(terminalWidth * 0.5));
+  const rows = skills.map((skill) => ({
+    columns: [
+      skill.title,
+      skill.description || "-",
+      skill.author,
+      skill.author_email
+    ],
+    descriptionLines: wrapText(skill.description || "-", descriptionWidth)
+  }));
+  const widths = headers.map((header, index) => {
+    if (index === 1) {
+      return descriptionWidth;
+    }
+
+    return Math.max(header.length, ...rows.map((row) => row.columns[index].length));
+  });
 
   console.log(formatRow(headers, widths));
   console.log(formatRow(widths.map((width) => "-".repeat(width)), widths));
 
   for (const row of rows) {
-    console.log(formatRow(row, widths));
+    const [firstDescriptionLine, ...remainingDescriptionLines] = row.descriptionLines;
+    console.log(formatRow([
+      row.columns[0],
+      firstDescriptionLine ?? "",
+      row.columns[2],
+      row.columns[3]
+    ], widths));
+
+    for (const descriptionLine of remainingDescriptionLines) {
+      console.log(formatRow(["", descriptionLine, "", ""], widths));
+    }
   }
 }
 
 function formatRow(values: string[], widths: number[]): string {
   return values.map((value, index) => value.padEnd(widths[index])).join("  ");
+}
+
+function wrapText(value: string, width: number): string[] {
+  if (value.length <= width) {
+    return [value];
+  }
+
+  const words = value.split(/\s+/);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    if (!currentLine) {
+      currentLine = word;
+      continue;
+    }
+
+    if (`${currentLine} ${word}`.length <= width) {
+      currentLine = `${currentLine} ${word}`;
+      continue;
+    }
+
+    lines.push(currentLine);
+    currentLine = word;
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.flatMap((line) => splitLongLine(line, width));
+}
+
+function splitLongLine(value: string, width: number): string[] {
+  if (value.length <= width) {
+    return [value];
+  }
+
+  const lines: string[] = [];
+
+  for (let index = 0; index < value.length; index += width) {
+    lines.push(value.slice(index, index + width));
+  }
+
+  return lines;
 }
 
 function publishSkill(args: string[]): void {
