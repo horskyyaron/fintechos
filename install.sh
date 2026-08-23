@@ -8,6 +8,11 @@ set -euo pipefail
 REPO_URL="${FINTECH_REPO_URL:-https://github.com/horskyyaron/fintechos.git}"
 INSTALL_DIR="${FINTECH_INSTALL_DIR:-$HOME/.local/share/fintech-brain}"
 BRANCH="${FINTECH_BRANCH:-}"
+USE_COLOR=0
+
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  USE_COLOR=1
+fi
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -15,18 +20,45 @@ BRANCH="${FINTECH_BRANCH:-}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    printf 'Missing required command: %s\n' "$1" >&2
+    error "Missing required command: $1"
     exit 1
   fi
 }
 
+color() {
+  local code="$1"
+  shift
+
+  if [ "$USE_COLOR" = "1" ]; then
+    printf '\033[%sm%s\033[0m' "$code" "$*"
+  else
+    printf '%s' "$*"
+  fi
+}
+
+section() {
+  printf '\n%s %s\n' "$(color 36 '==>')" "$(color 1 "$*")"
+}
+
+info() {
+  printf '%s %s\n' "$(color 34 '-->')" "$*"
+}
+
+success() {
+  printf '%s %s\n' "$(color 32 'ok')" "$*"
+}
+
+error() {
+  printf '%s %s\n' "$(color 31 'error:')" "$*" >&2
+}
+
 print_config() {
-  printf 'Fintech Brain installer\n'
-  printf 'Repo: %s\n' "$REPO_URL"
-  printf 'Install dir: %s\n' "$INSTALL_DIR"
+  section 'Fintech Brain installer'
+  info "Repo: $REPO_URL"
+  info "Install dir: $INSTALL_DIR"
 
   if [ -n "$BRANCH" ]; then
-    printf 'Branch: %s\n' "$BRANCH"
+    info "Branch: $BRANCH"
   fi
 }
 
@@ -35,9 +67,11 @@ print_config() {
 # -----------------------------------------------------------------------------
 
 check_requirements() {
+  section 'Checking requirements'
   require_command git
   require_command node
   require_command npm
+  success 'git, node, and npm are available'
 }
 
 # -----------------------------------------------------------------------------
@@ -51,8 +85,8 @@ install_or_update_repo() {
   fi
 
   if [ -e "$INSTALL_DIR" ]; then
-    printf 'Install directory exists but is not a git repo: %s\n' "$INSTALL_DIR" >&2
-    printf 'Set FINTECH_INSTALL_DIR to another path or remove the existing directory.\n' >&2
+    error "Install directory exists but is not a git repo: $INSTALL_DIR"
+    error 'Set FINTECH_INSTALL_DIR to another path or remove the existing directory.'
     exit 1
   fi
 
@@ -60,7 +94,8 @@ install_or_update_repo() {
 }
 
 clone_repo() {
-  printf 'Cloning fintech-brain into %s...\n' "$INSTALL_DIR"
+  section 'Cloning repository'
+  info "Target: $INSTALL_DIR"
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
   if [ -n "$BRANCH" ]; then
@@ -68,10 +103,13 @@ clone_repo() {
   else
     git clone "$REPO_URL" "$INSTALL_DIR"
   fi
+
+  success 'Repository cloned'
 }
 
 update_repo() {
-  printf 'Updating fintech-brain in %s...\n' "$INSTALL_DIR"
+  section 'Updating repository'
+  info "Target: $INSTALL_DIR"
   git -C "$INSTALL_DIR" fetch --prune origin
 
   if [ -n "$BRANCH" ]; then
@@ -80,6 +118,8 @@ update_repo() {
   else
     git -C "$INSTALL_DIR" pull --ff-only
   fi
+
+  success 'Repository updated'
 }
 
 # -----------------------------------------------------------------------------
@@ -87,7 +127,7 @@ update_repo() {
 # -----------------------------------------------------------------------------
 
 run_setup() {
-  printf 'Running setup...\n'
+  section 'Running setup'
   "$INSTALL_DIR/setup.sh"
 }
 
@@ -100,6 +140,8 @@ main() {
   check_requirements
   install_or_update_repo
   run_setup
+  section 'Done'
+  success 'Fintech Brain is installed. Run: fintech doctor'
 }
 
 main
