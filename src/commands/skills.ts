@@ -57,7 +57,6 @@ function publishSkill(args: string[]): void {
     return;
   }
 
-  const force = args.includes("--force");
   const fileArg = args.find((arg) => !arg.startsWith("--"));
 
   if (!fileArg) {
@@ -94,9 +93,9 @@ function publishSkill(args: string[]): void {
 
   const targetPath = resolve(CONTENT_SKILLS_DIR, `${id}.md`);
 
-  if (existsSync(targetPath) && !force) {
+  if (existsSync(targetPath)) {
     console.error(`Skill already exists: ${id}`);
-    console.error("Use --force to overwrite it.");
+    console.error("Publishing cannot overwrite existing skills. Future update/contribution flows will handle changes.");
     process.exitCode = 1;
     return;
   }

@@ -106,12 +106,10 @@ The CLI adds frontmatter with:
   title, author, author_email, tags, created, updated
 
 Options:
-  --force     Overwrite an existing skill with the same title-derived id
   -h, --help  Print this help
 
 Examples:
-  fintech skills publish ./my-skill.md
-  fintech skills publish ./my-skill.md --force`);
+  fintech skills publish ./my-skill.md`);
 }
 
 export function versionHelp(): void {

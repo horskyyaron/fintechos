@@ -4,7 +4,7 @@ const COMMANDS = ["setup", "doctor", "skills", "version", "help", "completion"];
 const SETUP_OPTIONS = ["--reset", "--name", "--email", "--agents", "--help", "-h"];
 const HELP_OPTIONS = ["--help", "-h"];
 const SKILLS_COMMANDS = ["list", "publish", "--help", "-h"];
-const SKILLS_PUBLISH_OPTIONS = ["--force", "--help", "-h"];
+const SKILLS_PUBLISH_OPTIONS = ["--help", "-h"];
 const SHELLS = ["bash", "zsh"];
 
 export function completion(args: string[]): void {
