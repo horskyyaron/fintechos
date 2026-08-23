@@ -1,8 +1,10 @@
 import { completionHelp, hasHelpFlag } from "../help.js";
 
-const COMMANDS = ["setup", "doctor", "version", "help", "completion"];
+const COMMANDS = ["setup", "doctor", "skills", "version", "help", "completion"];
 const SETUP_OPTIONS = ["--reset", "--name", "--email", "--agents", "--help", "-h"];
 const HELP_OPTIONS = ["--help", "-h"];
+const SKILLS_COMMANDS = ["list", "publish", "--help", "-h"];
+const SKILLS_PUBLISH_OPTIONS = ["--help", "-h"];
 const SHELLS = ["bash", "zsh"];
 
 export function completion(args: string[]): void {
@@ -31,6 +33,8 @@ function bashCompletion(): string {
   const commands = COMMANDS.join(" ");
   const setupOptions = SETUP_OPTIONS.join(" ");
   const helpOptions = HELP_OPTIONS.join(" ");
+  const skillsCommands = SKILLS_COMMANDS.join(" ");
+  const skillsPublishOptions = SKILLS_PUBLISH_OPTIONS.join(" ");
   const shells = SHELLS.join(" ");
 
   return `# fintech completion for bash
@@ -53,6 +57,15 @@ _fintech_completion() {
     doctor|version|help)
       COMPREPLY=( $(compgen -W "${helpOptions}" -- "$cur") )
       ;;
+    skills)
+      if [[ $COMP_CWORD -eq 2 ]]; then
+        COMPREPLY=( $(compgen -W "${skillsCommands}" -- "$cur") )
+      elif [[ "\${COMP_WORDS[2]}" == "publish" ]]; then
+        COMPREPLY=( $(compgen -W "${skillsPublishOptions}" -- "$cur") )
+      else
+        COMPREPLY=( $(compgen -W "${helpOptions}" -- "$cur") )
+      fi
+      ;;
     completion)
       COMPREPLY=( $(compgen -W "${shells} ${helpOptions}" -- "$cur") )
       ;;
@@ -66,15 +79,19 @@ function zshCompletion(): string {
   const commands = COMMANDS.join(" ");
   const setupOptions = SETUP_OPTIONS.join(" ");
   const helpOptions = HELP_OPTIONS.join(" ");
+  const skillsCommands = SKILLS_COMMANDS.join(" ");
+  const skillsPublishOptions = SKILLS_PUBLISH_OPTIONS.join(" ");
   const shells = SHELLS.join(" ");
 
   return `#compdef fintech
 # fintech completion for zsh
 _fintech() {
-  local -a commands setup_options help_options shells
+  local -a commands setup_options help_options skills_commands skills_publish_options shells
   commands=(${commands})
   setup_options=(${setupOptions})
   help_options=(${helpOptions})
+  skills_commands=(${skillsCommands})
+  skills_publish_options=(${skillsPublishOptions})
   shells=(${shells})
 
   if (( CURRENT == 2 )); then
@@ -88,6 +105,15 @@ _fintech() {
       ;;
     doctor|version|help)
       _describe 'option' help_options
+      ;;
+    skills)
+      if (( CURRENT == 3 )); then
+        _describe 'skills command' skills_commands
+      elif [[ "$words[3]" == "publish" ]]; then
+        _describe 'option' skills_publish_options
+      else
+        _describe 'option' help_options
+      fi
       ;;
     completion)
       _describe 'shell' shells

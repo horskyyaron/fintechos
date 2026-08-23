@@ -9,6 +9,7 @@ Usage:
 Commands:
   setup       Configure local identity and agents
   doctor      Check local fintech setup
+  skills      Publish and list shared skills
   completion  Generate shell completion
   version     Print version
   help        Print help
@@ -67,6 +68,48 @@ Options:
 Examples:
   fintech completion zsh
   fintech completion bash`);
+}
+
+export function skillsHelp(): void {
+  console.log(`Usage:
+  fintech skills <command> [options]
+
+Commands:
+  list     List published skills
+  publish  Publish a markdown file as a shared skill
+
+Run command help:
+  fintech skills list --help
+  fintech skills publish --help`);
+}
+
+export function skillsListHelp(): void {
+  console.log(`Usage:
+  fintech skills list [options]
+
+List published agent-agnostic skills.
+
+Options:
+  -h, --help  Print this help
+
+Examples:
+  fintech skills list`);
+}
+
+export function skillsPublishHelp(): void {
+  console.log(`Usage:
+  fintech skills publish <file.md> [options]
+
+Publish a markdown file as an agent-agnostic shared skill.
+
+The CLI adds frontmatter with:
+  title, author, author_email, tags, created, updated
+
+Options:
+  -h, --help  Print this help
+
+Examples:
+  fintech skills publish ./my-skill.md`);
 }
 
 export function versionHelp(): void {
