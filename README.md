@@ -31,20 +31,3 @@ FINTECH_INSTALL_DIR="$HOME/Projects/fintech-brain" \
   FINTECH_AGENTS="opencode,claude" \
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/horskyyaron/fintechos/master/install.sh)"
 ```
-
-Other supported overrides:
-
-```bash
-# Use another git repo URL.
-FINTECH_REPO_URL="https://github.com/horskyyaron/fintechos.git"
-
-# Install from a specific branch.
-FINTECH_BRANCH="feature/some-branch"
-
-# Set identity without prompting.
-FINTECH_NAME="Your Name"
-FINTECH_EMAIL="you@example.com"
-
-# Force setup to replace an existing local config.
-FINTECH_SETUP_RESET=1
-```
