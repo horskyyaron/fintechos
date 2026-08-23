@@ -1,7 +1,7 @@
 ---
 title: /efi5
 author: Yaron Horsky
-author_email: horsky.yaron@gmail.com
+author_email: yaronh@moveo.co.il
 tags: []
 created: 2026-08-24T00:00:00.000Z
 updated: 2026-08-24T00:00:00.000Z
