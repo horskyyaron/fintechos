@@ -3,7 +3,7 @@ import { completionHelp, hasHelpFlag } from "../help.js";
 const COMMANDS = ["setup", "doctor", "skills", "version", "help", "completion"];
 const SETUP_OPTIONS = ["--reset", "--name", "--email", "--agents", "--help", "-h"];
 const HELP_OPTIONS = ["--help", "-h"];
-const SKILLS_COMMANDS = ["list", "publish", "--help", "-h"];
+const SKILLS_COMMANDS = ["list", "publish", "install", "installed", "--help", "-h"];
 const SKILLS_PUBLISH_OPTIONS = ["--help", "-h"];
 const SHELLS = ["bash", "zsh"];
 
@@ -60,7 +60,7 @@ _fintech_completion() {
     skills)
       if [[ $COMP_CWORD -eq 2 ]]; then
         COMPREPLY=( $(compgen -W "${skillsCommands}" -- "$cur") )
-      elif [[ "\${COMP_WORDS[2]}" == "publish" ]]; then
+      elif [[ "\${COMP_WORDS[2]}" == "publish" || "\${COMP_WORDS[2]}" == "install" || "\${COMP_WORDS[2]}" == "installed" ]]; then
         COMPREPLY=( $(compgen -W "${skillsPublishOptions}" -- "$cur") )
       else
         COMPREPLY=( $(compgen -W "${helpOptions}" -- "$cur") )
@@ -113,7 +113,7 @@ _fintech() {
         skills)
           if (( CURRENT == 3 )); then
             compadd -a skills_commands
-          elif [[ "$words[3]" == "publish" ]]; then
+          elif [[ "$words[3]" == "publish" || "$words[3]" == "install" || "$words[3]" == "installed" ]]; then
             compadd -a skills_publish_options
           else
             compadd -a help_options

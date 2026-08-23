@@ -16,3 +16,14 @@ export type SkillRegistryEntry = SkillMetadata & {
 export type SkillRegistry = {
   skills: SkillRegistryEntry[];
 };
+
+export type InstalledSkillEntry = {
+  id: string;
+  title: string;
+  agents: string[];
+  installed_at: string;
+};
+
+export type InstalledSkills = {
+  skills: InstalledSkillEntry[];
+};

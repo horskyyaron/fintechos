@@ -77,10 +77,14 @@ export function skillsHelp(): void {
 Commands:
   list     List published skills
   publish  Publish a markdown file as a shared skill
+  install  Install skills into your configured coding agents
+  installed Show locally installed skills
 
 Run command help:
   fintech skills list --help
-  fintech skills publish --help`);
+  fintech skills publish --help
+  fintech skills install --help
+  fintech skills installed --help`);
 }
 
 export function skillsListHelp(): void {
@@ -110,6 +114,37 @@ Options:
 
 Examples:
   fintech skills publish ./my-skill.md`);
+}
+
+export function skillsInstallHelp(): void {
+  console.log(`Usage:
+  fintech skills install [skill-id...]
+
+Install shared skills into your configured coding agents.
+
+With no skill IDs, opens an interactive checkbox picker.
+With skill IDs, installs those skills directly.
+
+Supported agents:
+  opencode, claude
+
+Examples:
+  fintech skills install
+  fintech skills install efi5
+  fintech skills install efi5 another-skill`);
+}
+
+export function skillsInstalledHelp(): void {
+  console.log(`Usage:
+  fintech skills installed [options]
+
+List skills installed on this machine.
+
+Options:
+  -h, --help  Print this help
+
+Examples:
+  fintech skills installed`);
 }
 
 export function versionHelp(): void {
