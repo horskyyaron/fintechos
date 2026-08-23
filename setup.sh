@@ -6,6 +6,7 @@ FINTECH_BIN="$ROOT_DIR/bin/fintech.js"
 COMPLETION_DIR="$HOME/.config/fintech-brain/completions"
 MARKER_START="# >>> fintech-brain initialize >>>"
 MARKER_END="# <<< fintech-brain initialize <<<"
+MISE_BIN="$HOME/.local/bin/mise"
 USE_COLOR=0
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -19,6 +20,10 @@ require_command() {
     error "Missing required command: $1"
     exit 1
   fi
+}
+
+has_command() {
+  command -v "$1" >/dev/null 2>&1
 }
 
 color() {
@@ -46,6 +51,97 @@ success() {
 
 error() {
   printf '%s %s\n' "$(color 31 'error:')" "$*" >&2
+}
+
+prompt_continue() {
+  if [ ! -t 0 ] || [ "${FINTECH_YES:-}" = "1" ]; then
+    return
+  fi
+
+  printf '%s Continue? [Y/n] ' "$(color 33 '?')"
+  read -r answer
+
+  case "$answer" in
+    ""|y|Y|yes|YES)
+      return
+      ;;
+    *)
+      error 'Setup cancelled.'
+      exit 1
+      ;;
+  esac
+}
+
+install_mise() {
+  if has_command mise; then
+    success 'mise is available'
+    return
+  fi
+
+  if [ -x "$MISE_BIN" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+    success 'mise is available'
+    return
+  fi
+
+  section 'Installing mise'
+  info 'mise is required to install missing tool dependencies.'
+
+  if ! has_command curl; then
+    error 'curl is required to install mise.'
+    exit 1
+  fi
+
+  curl https://mise.run | sh
+  export PATH="$HOME/.local/bin:$PATH"
+
+  if ! has_command mise; then
+    error 'mise installation finished, but mise is still not available on PATH.'
+    error 'Restart your shell and rerun ./setup.sh, or add ~/.local/bin to PATH.'
+    exit 1
+  fi
+
+  success 'mise installed'
+}
+
+install_tool_dependencies() {
+  install_mise
+
+  section 'Installing tool dependencies with mise'
+  mise trust "$ROOT_DIR/mise.toml"
+  mise install
+  eval "$(mise activate bash)"
+}
+
+check_dependencies() {
+  section 'Checking dependencies'
+
+  if ! has_command git; then
+    error 'git is required before setup can continue.'
+    error 'Install git first, then rerun ./setup.sh.'
+    exit 1
+  fi
+
+  if has_command node && has_command npm; then
+    success "git: $(git --version)"
+    success "node: $(node --version)"
+    success "npm: $(npm --version)"
+    prompt_continue
+    return
+  fi
+
+  info 'node and/or npm are missing. They will be installed through mise.'
+  install_tool_dependencies
+
+  if ! has_command node || ! has_command npm; then
+    error 'node/npm are still unavailable after mise install.'
+    exit 1
+  fi
+
+  success "git: $(git --version)"
+  success "node: $(node --version)"
+  success "npm: $(npm --version)"
+  prompt_continue
 }
 
 append_once() {
@@ -80,9 +176,7 @@ install_completion() {
   success 'Installed bash completion. Restart shell or run: source ~/.bashrc'
 }
 
-require_command node
-require_command npm
-require_command git
+check_dependencies
 
 section 'Installing dependencies'
 npm install

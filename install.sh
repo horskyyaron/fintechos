@@ -69,9 +69,7 @@ print_config() {
 check_requirements() {
   section 'Checking requirements'
   require_command git
-  require_command node
-  require_command npm
-  success 'git, node, and npm are available'
+  success 'git is available'
 }
 
 # -----------------------------------------------------------------------------
