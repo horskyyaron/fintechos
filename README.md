@@ -88,6 +88,7 @@ FINTECH_INSTALL_DIR="$HOME/Projects/fintech-brain" \
 
 ### Agents
 
+- [ ] Better setup: detect coding agents already used on the machine, then still prompt the user to add more
 - [ ] More coding agents
 - [ ] Agent-specific rendering improvements
 - [ ] Installed skill upgrades
